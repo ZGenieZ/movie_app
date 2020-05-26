@@ -100,3 +100,65 @@ EX)<label for> -> <label htmlFor>
 
 #4.3 Adding Genres
 props에 array를 포함시킬 때 genres: PropTypes.arrayOf(PropTypes.string).isRequired 형태로 써야한다.
+
+#5.0 Deploying to Github Pages
+
+- 코드를 cloud에 올리는 법(github page)
+
+1. gh-pages 설치(npm install gh-pages) > github에 업로드하는 것을 허가해주는 모듈로써 나의 웹사이트를 github의 github page 도메인에 나타나게 해줌
+   (무료로 static , HTML, Css, Javvascript 웹사이트를 제공함)
+2. package.JSON 으로 가서 homepage를 추가
+   "homepage" : "username(zgeniez).github.io/project name(movie_app)"
+   ※이때 username과 project name은 모두 lowercase여야 함
+3. npm run build 명령으로 build폴더를 만들고, script에 deploy,predeploy 추가하기
+   "deploy" : "gh-pages -d build" <- 이때 폴더이름과 build이 같아야 함
+   "predeploy" : "npm run build" <- deploy 명령어를 입력할 때마다 실행되기 전에 자동으로 predeploy가 실행. pre를 붙일때에는 이름 형식이 같아야 자동으로 실행됨
+
+#5.1 Are we done
+더 이상 state를 갖기 위해 class component를 가질 필요가 없음 . WHY ? React Hook을 사용하면 됨!
+react hook은 새로운 것이고 대체물은 아님. (class component가 구식이 아님)
+
+#6.0 Getting Ready for the Router
+페이지에 인터랙션을 더 추가하기(네비게이션바)
+React-router-dom이란 ? 네비게이션을 만들어주는 패키지(npm install react-router-dom으로 설치)
+2개의 라우터로 구성하여 2개의 스크린을 만듬(영화 설명(홈),about페이지)
+App.js에 있는 내용을 모두 Home.js로 옮기고 App.js에는 라우터 추가
+
+#6.1 Building the Router
+App.js에 Router를 반환함으로써 Home.js로 가거나 About.js로 가게 만듬
+HashRouter, Route를 import 하여 사용.
+이때 Route 안에는 매우 중요한 props가 들어감(렌더링할 스크린,다른 prop은 뭘 할지 정해줌)
+props중 path에는 경로, component에는 보여줄 컴포넌트를 넣어줌
+※path가 /,/about 같이 겹치는 경로가 존재할 경우 리액트 라우터가 작동하는 방식(기본적으로 url을 가져와 라우터에서 비교함.처음에는 /가 매치되고 그다음에는 /about이 매치되어 /가 라우트로 여겨짐.따라서 동시에 렌더링) 때문에 2개의 컴포넌트가 동시에 렌더링됨.
+
+- 해결방법 : 첫번째 route의 props에 exact = {true}를 추가해준다.위의 예제에는 /의 props에 추가해주면 되는데 이때 리액트 라우터는 url이 /일때만 home을 렌더링해준다.
+
+#6.2 Building the Navigation
+네비게이션 컴포넌트를 추가한다. 이때 a href를 사용하여 home,about을 누르면 페이지가 새로고침되버림(html 특성)
+따라서 react-router-dom에 있는 Link를 import해서 사용.
+※Router 밖에서는 Link를 사용할 수 없다. HashRouter 대신에 BrowserRouter를 쓰면 주소창의 /#/이 사라진다.
+하지만 github pages에 정확히 설정하기 어렵기 때문에 HashRouter로 하는게 쉬움
+
+#6.3 Sharing Props Between Routes
+route props
+모든 컴포넌트에는 props가 존재함. ex)movie.js에서는 {year,title,...} 과 같은 props를 보내고 있음
+about.js에서 console.log(props)를 하면 history,location,match,staticContent과 같은 4개의 props가 존재함
+이것들은 아직 about으로 전송되지 않았음. (react-router에 의해서 넣어짐)
+※라우터에 있는 모든 라우트들은 기본값으로 props를 가짐 <- movie를 클릭하면 Detail 페이지에 props를 전달
+Link to의 값을 string -> object로 변경하여 보낼 수 있음 ex)<Link to={{pathname:"/about", state:{fromNavigation:true}}}>
+링크를 클릭하면 리액트 라우터는 pathname으로 데려가고 route로 props도 전달해줌.
+
+#6.4 Redirecting
+링크를 통해 정보를 라우터로 보내고 있음. 현재 전달한 정보는 props -> location -> state안에 존재.
+이 때 movie를 클릭하지 않고 주소창에 /movie-detail을 치면 state에는 아무것도 존재하지 않음.(movie를 클릭해야
+해당 props가 전달되기 때문) 따라서 class 컴포넌트로 핸들링.
+componentDidMount()에 location.state가 존재하지 않으면(undefined) 홈으로 리다이렉트 (props의 history.push()사용) 따라서 movie를 직접적으로 클릭해야 detail 페이지로 가고 나머지 경우는 모두 홈으로 리다이렉트 시킴.
+하지만 한번 render() 후에 주소창에 /movie-detail을 치면 location이 더이상 존재하지 않기 때문에 오류가 발생한다.
+(render()가 실행되고 componentDidMount()가 실행되기 때문에 componentDidMount안의 에러 핸들링이 실행될 수 없음)
+해결법으로 location.state가 존재하지 않을 시 null을 반환하는 것으로 오류를 해결. 이로써 link를 사용하여 스크린사이에서 정보를 공유할 수 있음. 네비게이션은 이런 Props가 존재하지 않음.오직 Route에서만 !
+path에 변수(id)로 주소를 지정하고 싶다면 App.js의 link path="/movie/:id"로 고치고 Movie.js의 link to="pathname=`/movie/${id}`로 고친다.
+
+#6.5 Conclusions
+home -> about -> home으로 가면 다시 로딩된 후 화면이 뜬다. 왜? home에 state가 갇혀있기 때문!
+그래서 매번 home이 사라지면 (about을 클릭했다면) 다시 home을 가면 state가 비어있게 된다. (데이터를 다시 불러와야되기 때문) <- 효율성 떨어짐
+따라서 redux를 쓰면 state를 스크린 밖에 있도록 해준다.(데이터를 매번 불러올 필요가 없다.왜? state를 저장하기 떄문에)
